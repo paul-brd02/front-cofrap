@@ -2,59 +2,57 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 
 function Login() {
-  const [createAccountView, setCreateAccountView] = useState(false);
+  const [createAccount, setCreateAccount] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordMatch, setPasswordMatch] = useState(false);
-  const [passwordStrong, setPasswordStrong] = useState(false);
   const [canSubmit, setCanSubmit] = useState(false);
 
-  let navigate = useNavigate();
+  const navigate = useNavigate();
 
-  // Conditions individuelles
-  const hasUppercase = (password) => {
-    return /[A-Z]/.test(password);
-  }
-  const hasLowercase = (password) => {
-    return /[a-z]/.test(password);
-  }
-  const hasNumber = (password) => {
-    return /\d/.test(password);
-  }
-  const hasSpecialChar = (password) => {
-    return /[^A-Za-z\d]/.test(password);
-  }
-  const hasMinLength = (password) => {
-    return password.length >= 24;
-  }
+  // ----- VALIDATION FUNCTIONS -----
+  const isValidEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const verifStrongPassword = (password) => {
-    return hasUppercase(password) && hasLowercase(password) && hasNumber(password) && hasSpecialChar(password) && hasMinLength(password);
-  }
+  const isStrongPassword = (pwd) =>
+    /[A-Z]/.test(pwd) &&
+    /[a-z]/.test(pwd) &&
+    /\d/.test(pwd) &&
+    /[^A-Za-z\d]/.test(pwd) &&
+    pwd.length >= 24;
 
+  const passwordsMatch = password === confirmPassword;
+
+  // ----- CAN SUBMIT CALCULATION -----
   useEffect(() => {
-    setPasswordStrong(verifStrongPassword(password));
-    if (!createAccountView) setCanSubmit(password && email);
-    console.log(canSubmit)
-  }, [password]);
+    const emailOK = isValidEmail(email);
+    const passwordOK = isStrongPassword(password);
 
-  useEffect(() => {
-    setPasswordMatch(password === confirmPassword);
-    setCanSubmit(passwordMatch && passwordStrong && email);
-  }, [confirmPassword]);
+    if (createAccount) {
+      setCanSubmit(emailOK && passwordOK && passwordsMatch);
+    } else {
+      setCanSubmit(emailOK && password.length > 0);
+    }
+  }, [email, password, confirmPassword, createAccount]);
 
+  // ----- UTILITY -----
   const getConditionClass = (condition) =>
     condition ? "text-green-500" : "text-red-500";
 
+  const handleSubmit = () => {
+    const user = { email, password };
+    navigate("/result", { state: { user } });
+  };
+
+  // ----- RENDER -----
   return (
     <div className="flex items-center justify-center h-full mt-16">
       <div className="bg-primary p-8 rounded-2xl shadow-md w-full max-w-sm">
         <h2 className="text-2xl font-semibold text-center mb-6 text-white">
-          {createAccountView ? "Créer un compte" : "Connexion"}
+          {createAccount ? "Créer un compte" : "Connexion"}
         </h2>
 
-        <form className="space-y-4">
+        <div className="space-y-4">
           <input
             type="email"
             placeholder="Email"
@@ -69,64 +67,66 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {/* Affichage des conditions */}
-          {createAccountView && (
-            <div className="text-sm space-y-1">
-              <p className={getConditionClass(hasMinLength)}>
-                {hasMinLength(password) ? "✅" : "❌"} 24 caractères minimum
-              </p>
-              <p className={getConditionClass(hasUppercase)}>
-                {hasUppercase(password) ? "✅" : "❌"} Au moins une majuscule
-              </p>
-              <p className={getConditionClass(hasLowercase)}>
-                {hasLowercase(password) ? "✅" : "❌"} Au moins une minuscule
-              </p>
-              <p className={getConditionClass(hasNumber)}>
-                {hasNumber(password) ? "✅" : "❌"} Au moins un chiffre
-              </p>
-              <p className={getConditionClass(hasSpecialChar)}>
-                {hasSpecialChar(password) ? "✅" : "❌"} Au moins un caractère spécial
-              </p>
-            </div>
-          )}
+          {createAccount && (
+            <>
+              {/* Conditions */}
+              <div className="text-sm space-y-1">
+                <p className={getConditionClass(password.length >= 24)}>
+                  {password.length >= 24 ? "✅" : "❌"} 24 caractères minimum
+                </p>
+                <p className={getConditionClass(/[A-Z]/.test(password))}>
+                  {/[A-Z]/.test(password) ? "✅" : "❌"} Une majuscule
+                </p>
+                <p className={getConditionClass(/[a-z]/.test(password))}>
+                  {/[a-z]/.test(password) ? "✅" : "❌"} Une minuscule
+                </p>
+                <p className={getConditionClass(/\d/.test(password))}>
+                  {/\d/.test(password) ? "✅" : "❌"} Un chiffre
+                </p>
+                <p className={getConditionClass(/[^A-Za-z\d]/.test(password))}>
+                  {/[^A-Za-z\d]/.test(password) ? "✅" : "❌"} Un caractère spécial
+                </p>
+              </div>
 
-          {createAccountView && (
-            <input
-              type="password"
-              placeholder="Confirmer le mot de passe"
-              className={`${passwordMatch ? "border-gray-300" : "border-red-500"} focus:outline-none focus:ring-2 ${passwordMatch ? "focus:ring-blue-500" : "focus:ring-red-500"
+              {/* Confirm password */}
+              <input
+                type="password"
+                placeholder="Confirmer le mot de passe"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`focus:outline-none focus:ring-2 ${
+                  passwordsMatch ? "focus:ring-blue-500 border-gray-300" : "focus:ring-red-500 border-red-500"
                 }`}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+              />
+            </>
           )}
 
           <button
-            type="submit"
             disabled={!canSubmit}
-            className={`w-full py-2 rounded-lg transition duration-200 ${canSubmit
-                ? createAccountView
+            onClick={handleSubmit}
+            className={`w-full py-2 rounded-lg transition duration-200 ${
+              canSubmit
+                ? createAccount
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-gray-400 text-white cursor-not-allowed"
-              }`}
+            }`}
           >
-            {createAccountView ? "Créer mon compte" : "Se connecter"}
+            {createAccount ? "Créer mon compte" : "Se connecter"}
           </button>
 
           <p
             onClick={() => {
-              setCreateAccountView(!createAccountView);
-              setEmail("")
+              setCreateAccount(!createAccount);
+              setEmail("");
               setPassword("");
               setConfirmPassword("");
-              navigate("/result")
             }}
             className="text-white text-center text-sm hover:underline hover:cursor-pointer"
           >
-            {createAccountView ? "Déjà un compte ? Se connecter" : "Créer un compte"}
+            {createAccount ? "Déjà un compte ? Se connecter" : "Créer un compte"}
           </p>
-        </form>
+        </div>
       </div>
     </div>
   );
