@@ -11,11 +11,10 @@ input {
     padding-top: 0.5rem; /* py-2 */
     padding-bottom: 0.5rem;
     background-color: white;
-    border: 1px solid #D1D5DB; /* border-gray-300 */
     border-radius: 0.5rem; /* rounded-lg */
     outline: none;
 }
 
-input {
-    box-shadow: 0 0 0 2px #3B82F6; /* ring-2 ring-blue-500 */
+input.inputError {
+    border: 2px solid red;
 }

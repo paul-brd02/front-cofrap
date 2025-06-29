@@ -1,134 +1,133 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
+import { apiRequest } from "../services/apiService";
 
 function Login() {
   const [createAccount, setCreateAccount] = useState(false);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [canSubmit, setCanSubmit] = useState(false);
+  const [usernameError, setUsernameError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const navigate = useNavigate();
 
-  // ----- VALIDATION FUNCTIONS -----
-  const isValidEmail = (email) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const checkValues = () => {
+    let usernameIsValid = username ? true : false;
+    let passwordIsValid = password ? true : false;
+    setUsernameError(!usernameIsValid);
+    setPasswordError(!passwordIsValid);
 
-  const isStrongPassword = (pwd) =>
-    /[A-Z]/.test(pwd) &&
-    /[a-z]/.test(pwd) &&
-    /\d/.test(pwd) &&
-    /[^A-Za-z\d]/.test(pwd) &&
-    pwd.length >= 24;
-
-  const passwordsMatch = password === confirmPassword;
-
-  // ----- CAN SUBMIT CALCULATION -----
-  useEffect(() => {
-    const emailOK = isValidEmail(email);
-    const passwordOK = isStrongPassword(password);
-
-    if (createAccount) {
-      setCanSubmit(emailOK && passwordOK && passwordsMatch);
+    if (usernameIsValid && (createAccount ? true : passwordIsValid)) {
+      return true;
     } else {
-      setCanSubmit(emailOK && password.length > 0);
+      return false;
     }
-  }, [email, password, confirmPassword, createAccount]);
+  }
 
-  // ----- UTILITY -----
-  const getConditionClass = (condition) =>
-    condition ? "text-green-500" : "text-red-500";
-
-  const handleSubmit = () => {
-    const user = { email, password };
-    navigate("/result", { state: { user } });
+  const handleSubmit = async () => {
+    try {
+      if (checkValues()) {
+        if (createAccount) {
+          const qrCode = await apiRequest("URL", "POST", { username });
+          setQrCodeData(qrCode);
+          setShowModal(true);
+        } else {
+          await apiRequest("URL", "POST", {
+            username: username,
+            password: password
+          });
+        }
+      };
+    } catch (err) {
+      alert("Erreur de la requête: ", err.message);
+    };
   };
 
-  // ----- RENDER -----
+  const closeModal = () => {
+    setShowModal(false);
+    setCreateAccount(false);
+    setUsername("");
+    setPassword("");
+    setUsernameError(false);
+    setPasswordError(false);
+  };
+
   return (
-    <div className="flex items-center justify-center h-full mt-16">
-      <div className="bg-primary p-8 rounded-2xl shadow-md w-full max-w-sm">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-white">
-          {createAccount ? "Créer un compte" : "Connexion"}
-        </h2>
+    <>
+      <div className="flex items-center justify-center h-full mt-16">
+        <div className="bg-primary p-8 rounded-2xl shadow-md w-full max-w-sm">
+          <h2 className="text-2xl font-semibold text-center mb-6 text-white">
+            {createAccount ? "Créer un compte" : "Connexion"}
+          </h2>
 
-        <div className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className={`${usernameError ? "inputError" : ""}`}
+            />
 
-          <input
-            type="password"
-            placeholder="Mot de passe"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+            {!createAccount && (<input
+              type="password"
+              placeholder="Mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`${passwordError ? "inputError" : ""}`}
+            />)}
 
-          {createAccount && (
-            <>
-              {/* Conditions */}
-              <div className="text-sm space-y-1">
-                <p className={getConditionClass(password.length >= 24)}>
-                  {password.length >= 24 ? "✅" : "❌"} 24 caractères minimum
-                </p>
-                <p className={getConditionClass(/[A-Z]/.test(password))}>
-                  {/[A-Z]/.test(password) ? "✅" : "❌"} Une majuscule
-                </p>
-                <p className={getConditionClass(/[a-z]/.test(password))}>
-                  {/[a-z]/.test(password) ? "✅" : "❌"} Une minuscule
-                </p>
-                <p className={getConditionClass(/\d/.test(password))}>
-                  {/\d/.test(password) ? "✅" : "❌"} Un chiffre
-                </p>
-                <p className={getConditionClass(/[^A-Za-z\d]/.test(password))}>
-                  {/[^A-Za-z\d]/.test(password) ? "✅" : "❌"} Un caractère spécial
-                </p>
-              </div>
-
-              {/* Confirm password */}
-              <input
-                type="password"
-                placeholder="Confirmer le mot de passe"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`focus:outline-none focus:ring-2 ${
-                  passwordsMatch ? "focus:ring-blue-500 border-gray-300" : "focus:ring-red-500 border-red-500"
+            <button
+              onClick={handleSubmit}
+              className={`w-full py-2 rounded-lg transition duration-200 ${createAccount
+                ? "bg-green-600 text-white hover:bg-green-700"
+                : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
-              />
-            </>
-          )}
+            >
+              {createAccount ? "Créer mon compte" : "Se connecter"}
+            </button>
 
-          <button
-            disabled={!canSubmit}
-            onClick={handleSubmit}
-            className={`w-full py-2 rounded-lg transition duration-200 ${
-              canSubmit
-                ? createAccount
-                  ? "bg-green-600 text-white hover:bg-green-700"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-gray-400 text-white cursor-not-allowed"
-            }`}
-          >
-            {createAccount ? "Créer mon compte" : "Se connecter"}
-          </button>
-
-          <p
-            onClick={() => {
-              setCreateAccount(!createAccount);
-              setEmail("");
-              setPassword("");
-              setConfirmPassword("");
-            }}
-            className="text-white text-center text-sm hover:underline hover:cursor-pointer"
-          >
-            {createAccount ? "Déjà un compte ? Se connecter" : "Créer un compte"}
-          </p>
+            <p
+              onClick={() => {
+                setCreateAccount(!createAccount);
+                setUsername("");
+                setPassword("");
+                setUsernameError(false);
+                setPasswordError(false);
+              }}
+              className="text-white text-center text-sm hover:underline hover:cursor-pointer"
+            >
+              {createAccount ? "Déjà un compte ? Se connecter" : "Créer un compte"}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl text-center max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">QR Code de votre mot de passe</h3>
+            {qrCodeData ? (
+              <img
+                src={qrCodeData} // doit être une URL ou base64 d’image
+                alt="QR Code"
+                className="mx-auto mb-4"
+              />
+            ) : (
+              <p>Chargement du QR Code...</p>
+            )}
+            <button
+              onClick={closeModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
