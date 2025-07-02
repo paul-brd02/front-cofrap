@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 
 function Result() {
-  const user = history.state?.usr?.user; // fallback si jamais tu en as besoin
+  const location = useLocation();
+  const user = location.state?.user;
 
   return (
     <div className="flex justify-center mt-24 px-4">
@@ -10,7 +11,11 @@ function Result() {
           Authentification à deux facteurs réussie
         </h2>
         <p className="text-gray-700 text-lg">
-          Bonjour <span className="font-medium">{user?.username}</span> 👋
+          Bonjour{" "}
+          <span className="font-medium">
+            {user?.username }
+          </span>{" "}
+          👋
         </p>
       </div>
     </div>

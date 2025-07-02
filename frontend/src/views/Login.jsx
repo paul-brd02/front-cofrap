@@ -5,26 +5,26 @@ import { apiRequest } from "../services/apiService";
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [twoFACode, setTwoFACode] = useState("");
+  const [code, setTwoFACode] = useState("");
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
-      if (!username || !password || !twoFACode) {
+      if (!username || !password || !code) {
         setError("Tous les champs sont obligatoires.");
         return;
       }
 
-      const res = await apiRequest("/api/login", "POST", {
+      const res = await apiRequest("/function/authenticate-user", "POST", {
         username,
         password,
-        token: twoFACode,
+        code
       });
 
       // Connexion OK => redirection
-      navigate("/dashboard", { state: { user: res } });
+      navigate("/result", { state: { user: { username } } });
     } catch (err) {
       setError("Échec de l'authentification.");
     }
@@ -54,7 +54,7 @@ function Login() {
         <input
           type="text"
           placeholder="Code 2FA"
-          value={twoFACode}
+          value={code}
           onChange={(e) => setTwoFACode(e.target.value)}
           className="border p-2 rounded w-full mb-3"
         />

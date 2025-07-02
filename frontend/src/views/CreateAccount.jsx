@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { apiRequest } from "../services/apiService";
 
 function CreateAccount() {
     const [step, setStep] = useState(1); // 1: password gen, 2: 2FA, 3: done
@@ -17,7 +18,7 @@ function CreateAccount() {
                 setError("Veuillez entrer un nom d'utilisateur.");
                 return;
             }
-            const res = await apiRequest("http://127.0.0.1:8080/function/generate-password", "POST", { username });
+            const res = await apiRequest("/function/generate-password", "POST", { username });
             setUserCreated(res);
             setStep(2);
         } catch (err) {
@@ -27,7 +28,7 @@ function CreateAccount() {
 
     const handleGenerate2FA = async () => {
         try {
-            const res = await apiRequest("http://127.0.0.1:8080/function/generate-2fa", "POST", { username });
+            const res = await apiRequest("/function/generate-2fa", "POST", { username });
             setTwoFAData(res);
             setStep(3);
         } catch (err) {

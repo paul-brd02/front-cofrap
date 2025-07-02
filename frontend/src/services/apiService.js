@@ -12,21 +12,19 @@ export async function apiRequest(url, method = 'GET', data = null) {
 
   try {
     const response = await fetch(url, config);
-    const contentType = response.headers.get('Content-Type');
+    const text = await response.text()
 
     if (!response.ok) {
-      const errorMessage = await response.text();
-      throw new Error(errorMessage || 'Erreur inconnue');
+      throw new Error(text || response.statusText)
     }
 
-    // Si le serveur renvoie du JSON, on le parse
-    if (contentType && contentType.includes('application/json')) {
-      return await response.json();
-    } else {
-      return await response.text();
+    try {
+      return JSON.parse(text)
+    } catch {
+      return text
     }
   } catch (error) {
     console.error('Erreur API :', error.message);
-    throw error; // Laisse l'appelant gérer l'erreur
+    throw error;
   }
 }
