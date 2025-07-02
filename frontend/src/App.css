@@ -14,7 +14,3 @@ input {
     border-radius: 0.5rem; /* rounded-lg */
     outline: none;
 }
-
-input.inputError {
-    border: 2px solid red;
-}
